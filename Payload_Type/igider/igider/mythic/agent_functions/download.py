@@ -1,5 +1,5 @@
 from mythic_container.MythicCommandBase import *
-from mythic_container.MythicRPC import *
+from mythic_container.MythicRPC import *, PTTaskMessageResponse
 
 class DownloadArguments(TaskArguments):
     def __init__(self, task_id: str):
