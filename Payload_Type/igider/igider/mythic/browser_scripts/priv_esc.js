@@ -1,45 +1,90 @@
-function(task, responses) {
-    // Handle error status
-    if (task.status.includes("error")) {
-        const combined = responses.reduce((prev, cur) => prev + cur, "");
-        return {"plaintext": combined || "Task failed with an unknown error."};
-    } 
-    // Handle completed task
-    else if (task.completed) {
-        try {
-            // Validate responses array
-            if (!responses || responses.length === 0) {
-                return {"plaintext": "No data returned from agent."};
+function(task, responses){
+    if(task.status.includes("error")){
+        const combined = responses.reduce( (prev, cur) => {
+            return prev + cur;
+        }, "");
+        return {'plaintext': combined};
+    }else if(task.completed){
+        try{
+            // Find the last response that looks like JSON
+            let jsonResponse = null;
+            for(let i = responses.length - 1; i >= 0; i--){
+                const response = responses[i].trim();
+                if(response.startsWith('{') && response.endsWith('}')){
+                    jsonResponse = response;
+                    break;
+                }
             }
-            // Parse the first response
-            let data = JSON.parse(responses[0]);
-            // Validate results object
-            if (!data.results) {
-                return {"plaintext": "Invalid response format: missing results field."};
+            
+            if(!jsonResponse){
+                // No JSON found, return all responses as plain text
+                const combined = responses.reduce( (prev, cur) => {
+                    return prev + cur;
+                }, "");
+                return {'plaintext': combined};
             }
-            // Initialize output
-            let output = "Privilege Escalation Check Results:\n\n";
-            // Current user
-            output += `Current User: ${data.results.current_user || "Unknown"}\n\n`;
-            // SUID binaries
-            output += `SUID Binaries:\n${Array.isArray(data.results.suid_binaries) && data.results.suid_binaries.length > 0 ? data.results.suid_binaries.join("\n") : "None"}\n\n`;
-            // Writable cron jobs
-            output += `Writable Cron Jobs:\n${Array.isArray(data.results.writable_cron) && data.results.writable_cron.length > 0 ? data.results.writable_cron.join("\n") : "None"}\n\n`;
-            // Sudo permissions
-            output += `Sudo Permissions:\n${Array.isArray(data.results.sudo_permissions) && data.results.sudo_permissions.length > 0 ? data.results.sudo_permissions.join("\n") : "None"}\n`;
-            return {"plaintext": output};
-        } catch (error) {
-            // Handle JSON parsing or other errors
-            const combined = responses.reduce((prev, cur) => prev + cur, "");
-            return {"plaintext": `Error processing response: ${error.message}\nRaw response: ${combined}`};
+            
+            let data = JSON.parse(jsonResponse);
+           
+            if(data.error){
+                return {'plaintext': data.error};
+            }
+           
+            let output = "";
+            output += "=== Privilege Escalation Check Results ===\n";
+            output += `Scan Start: ${data.scan_start}\n`;
+            output += `Scan End: ${data.scan_end}\n`;
+            output += `System: ${data.system}\n`;
+            output += `Hostname: ${data.hostname}\n`;
+            output += `Current User: ${data.current_user}\n`;
+            output += `Checks Performed: ${data.summary.checks_performed}\n`;
+            output += `Potential Vulnerabilities: ${data.summary.potential_vulns}\n\n`;
+           
+            // Display vulnerabilities
+            if(data.vulnerabilities.length > 0){
+                output += "Potential Vulnerabilities Found:\n";
+                output += "TYPE\t\tSEVERITY\tDETAILS\n";
+                output += "----\t\t--------\t-------\n";
+                
+                for(let vuln of data.vulnerabilities){
+                    let details = vuln.details;
+                    if(vuln.path){
+                        details += ` (Path: ${vuln.path})`;
+                    }
+                    output += `${vuln.type.padEnd(15)}\t${vuln.severity.padEnd(10)}\t${details}\n`;
+                }
+            }else{
+                output += "No potential vulnerabilities found.\n";
+            }
+           
+            return {'plaintext': output};
+           
+        }catch(error){
+            console.error("Error parsing privilege escalation results:", error);
+            const combined = responses.reduce( (prev, cur) => {
+                return prev + cur;
+            }, "");
+            return {'plaintext': combined};
         }
-    } 
-    // Handle in-progress task
-    else if (task.status === "processed") {
-        return {"plaintext": "Checking privilege escalation vectors..."};
-    } 
-    // Handle other statuses (e.g., pending)
-    else {
+    }else if(task.status === "processed"){
+        if(responses.length > 0){
+            try{
+                // Show intermediate results
+                let output = "Privilege Escalation Check in Progress...\n\n";
+               
+                for(let i = 0; i < responses.length; i++){
+                    if(responses[i].includes("Completed") && responses[i].includes("check")){
+                        output += responses[i] + "\n";
+                    }
+                }
+               
+                return {"plaintext": output};
+            }catch(error){
+                return {"plaintext": "Privilege escalation check running..."};
+            }
+        }
+        return {"plaintext": "Initializing privilege escalation check..."};
+    }else{
         return {"plaintext": "No response yet from agent..."};
     }
 }
