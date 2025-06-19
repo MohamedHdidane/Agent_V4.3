@@ -63,44 +63,9 @@ class Igider(PayloadType):
         BuildParameter(
             name="https_check",
             parameter_type=BuildParameterType.ChooseOne,
-            description="Verify HTTPS certificate (if HTTP, leave No). If Yes, you can optionally provide a CA bundle path.",
+            description="Verify HTTPS certificate (if HTTP, leave yes)",
             choices=["Yes", "No"],
-            default_value="No"  # Changed default to No for broader compatibility, user must enable
-        ),
-        BuildParameter(
-            name="ca_bundle_path",
-            parameter_type=BuildParameterType.String,
-            description="(Optional) Path to a custom CA bundle file for HTTPS verification. Only used if https_check is Yes.",
-            required=False,
-            default_value=""
-        ),
-        BuildParameter(
-            name="ptaas_enabled",
-            parameter_type=BuildParameterType.ChooseOne,
-            description="Enable PTaaS (Pentest as a Service) integration",
-            choices=["Yes", "No"],
-            default_value="No"
-        ),
-        BuildParameter(
-            name="ptaas_api_url",
-            parameter_type=BuildParameterType.String,
-            description="PTaaS API URL (required if PTaaS is enabled)",
-            required=False,
-            default_value=""
-        ),
-        BuildParameter(
-            name="ptaas_api_key",
-            parameter_type=BuildParameterType.String,
-            description="PTaaS API key (required if PTaaS is enabled)",
-            required=False,
-            default_value=""
-        ),
-        BuildParameter(
-            name="ptaas_engagement_id",
-            parameter_type=BuildParameterType.String,
-            description="PTaaS engagement ID (required if PTaaS is enabled)",
-            required=False,
-            default_value=""
+            default_value="Yes"
         )
     ]
     
@@ -389,7 +354,7 @@ class Igider(PayloadType):
             # Step 2: Gather components
             await self.update_build_step("Gathering Components", "Loading agent modules...")
                 # Load base agent code
-            base_agent_path = self.get_file_path(os.path.join(self.agent_code_path, "base_agent"), "agent_core")
+            base_agent_path = self.get_file_path(os.path.join(self.agent_code_path, "base_agent"), "base_agent")
             if not base_agent_path:
                 build_errors.append("Base agent code not found")
                 await self.update_build_step("Gathering Components", "Base agent code not found", False)
@@ -431,18 +396,6 @@ class Igider(PayloadType):
             base_code = base_code.replace("CRYPTO_MODULE_PLACEHOLDER", crypto_code)
             base_code = base_code.replace("UUID_HERE", self.uuid)
             base_code = base_code.replace("#COMMANDS_PLACEHOLDER", command_code)
-
-            # Add download command if not already present
-            if "download" not in self.commands.get_commands():
-                download_command_path = self.get_file_path(self.agent_code_path, "download")
-                if download_command_path:
-                    base_code += self._load_module_content(download_command_path) + "\n"
-                else:
-                    build_errors.append("Download command module not found")
-                    await self.update_build_step("Gathering Components", "Download command module not found", False)
-                    resp.set_status(BuildStatus.Error)
-                    resp.build_stderr = "\n".join(build_errors)
-                    return resp
             
             
                 # Process C2 profile configuration
@@ -451,69 +404,6 @@ class Igider(PayloadType):
                 base_code = self._apply_config_replacements(base_code, c2.get_parameters_dict())
             
             # Configure HTTPS certificate validation
-            verify_ssl = self.get_parameter("https_check")
-            ca_bundle = self.get_parameter("ca_bundle_path")
-            base_code = base_code.replace("VERIFY_SSL_PLACEHOLDER", f"'{verify_ssl}'")
-            base_code = base_code.replace("CA_BUNDLE_PATH_PLACEHOLDER", f"'{ca_bundle}'" if ca_bundle else "None")
-
-            # Configure PTaaS integration
-            ptaas_enabled = self.get_parameter("ptaas_enabled")
-            ptaas_api_url = self.get_parameter("ptaas_api_url")
-            ptaas_api_key = self.get_parameter("ptaas_api_key")
-            ptaas_engagement_id = self.get_parameter("ptaas_engagement_id")
-            
-            base_code = base_code.replace("PTAAS_ENABLED_PLACEHOLDER", f"'{ptaas_enabled}'")
-            base_code = base_code.replace("PTAAS_API_URL_PLACEHOLDER", f"'{ptaas_api_url}'" if ptaas_api_url else "''")
-            base_code = base_code.replace("PTAAS_API_KEY_PLACEHOLDER", f"'{ptaas_api_key}'" if ptaas_api_key else "''")
-            base_code = base_code.replace("PTAAS_ENGAGEMENT_ID_PLACEHOLDER", f"'{ptaas_engagement_id}'" if ptaas_engagement_id else "''")
-
-            # Step 4: Apply obfuscation
-            await self.update_build_step("Applying Obfuscation", "Applying selected obfuscation level...")
-            obfuscation_level = self.get_parameter("obfuscation_level")
-            if obfuscation_level == "basic":
-                base_code = basic_obfuscate(base_code)
-            elif obfuscation_level == "advanced":
-                base_code = advanced_obfuscate(base_code)
-
-            # Step 5: Finalize payload
-            await self.update_build_step("Finalizing Payload", "Preparing final output format...")
-            output_type = self.get_parameter("output")
-            final_payload_bytes = b""
-
-            if output_type == "py":
-                final_payload_bytes = base_code.encode()
-            elif output_type == "base64":
-                final_payload_bytes = base64.b64encode(base_code.encode())
-            elif output_type == "py_compressed":
-                final_payload_bytes = compress_code(base_code).encode()
-            elif output_type == "one_liner":
-                final_payload_bytes = create_one_liner(base_code).encode()
-            elif output_type == "exe_windows":
-                final_payload_bytes = self._build_executable(base_code, "windows")
-            elif output_type == "elf_linux":
-                final_payload_bytes = self._build_executable(base_code, "linux")
-            elif output_type == "powershell_reflective":
-                final_payload_bytes = self._create_powershell_loader(base_code).encode()
-            else:
-                build_errors.append(f"Unknown output type: {output_type}")
-                resp.set_status(BuildStatus.Error)
-                resp.build_stderr = "\n".join(build_errors)
-                return resp
-
-            resp.payload = final_payload_bytes
-            resp.set_status(BuildStatus.Success)
-            resp.build_stdout = "Build successful!"
-
-        except Exception as e:
-            self.logger.exception("Build failed")
-            resp.set_status(BuildStatus.Error)
-            resp.build_stderr = str(e)
-
-        return resp         verify_ssl = self.get_parameter("https_check")
-            ca_bundle = self.get_parameter("ca_bundle_path")
-            base_code = base_code.replace("VERIFY_SSL_PLACEHOLDER", f"'{verify_ssl}'")
-            base_code = base_code.replace("CA_BUNDLE_PATH_PLACEHOLDER", f"'{ca_bundle}'" if ca_bundle else "None")
-
             if self.get_parameter("https_check") == "No":
                 base_code = base_code.replace("urlopen(req)", "urlopen(req, context=gcontext)")
                 base_code = base_code.replace("#CERTSKIP", 
