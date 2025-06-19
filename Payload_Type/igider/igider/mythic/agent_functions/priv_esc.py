@@ -1,5 +1,5 @@
 from mythic_container.MythicCommandBase import *
-import json
+from mythic_container.MythicRPC import *
 
 class PrivEscArguments(TaskArguments):
     def __init__(self, command_line, **kwargs):
@@ -27,9 +27,9 @@ class PrivEscCommand(CommandBase):
         supported_os=[SupportedOS.Linux],
     )
 
-    async def create_go_tasking(self, taskData: PTTaskCreateTaskingMessageResponse) -> PTTaskCreateTaskingMessageResponse
+    async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
         response = PTTaskCreateTaskingMessageResponse(
-            TaskID=task_data.Task.ID,
+            TaskID=taskData.Task.ID,
             Success=True,
         )
         response.DisplayParams = "Checking privilege escalation vectors..."
