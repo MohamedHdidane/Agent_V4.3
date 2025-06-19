@@ -10,6 +10,7 @@ class PortScanArguments(TaskArguments):
             CommandParameter(
                 name="target", 
                 type=ParameterType.String, 
+                ui_position=0,
                 description="Target host/IP or IP range (e.g., 192.168.1.1, 192.168.1.1-10, 192.168.1.0/24)",
                 parameter_group_info=[ParameterGroupInfo(
                     required=True
@@ -18,6 +19,7 @@ class PortScanArguments(TaskArguments):
             CommandParameter(
                 name="ports", 
                 type=ParameterType.String, 
+                ui_position=1,
                 description="Ports to scan (e.g., 80, 80-443, 21,22,80,443)",
                 parameter_group_info=[ParameterGroupInfo(
                     required=True
@@ -26,6 +28,7 @@ class PortScanArguments(TaskArguments):
             CommandParameter(
                 name="timeout", 
                 type=ParameterType.String, 
+                ui_position=2,
                 description="Connection timeout in seconds (default: 1)",
                 parameter_group_info=[ParameterGroupInfo(
                     required=False
@@ -35,6 +38,7 @@ class PortScanArguments(TaskArguments):
             CommandParameter(
                 name="threads", 
                 type=ParameterType.String, 
+                ui_position=3,
                 description="Maximum concurrent threads (default: 100)",
                 parameter_group_info=[ParameterGroupInfo(
                     required=False
@@ -86,14 +90,14 @@ class PortScanArguments(TaskArguments):
                 raise Exception("Require both target and ports.\n\tUsage: {}".format(PortScanCommand.help_cmd))
             
             # Set parameters explicitly
-            self.add_arg("target", parts[1])
-            self.add_arg("ports", parts[2])
-            
-            if len(parts) > 3:
-                self.add_arg("timeout", parts[3])
+            self.add_arg("target", parts[0])
+            self.add_arg("ports", parts[1])
 
-            if len(parts) > 4:
-                self.add_arg("threads", parts[4])
+            if len(parts) > 2:
+                self.add_arg("timeout", parts[2])
+
+            if len(parts) > 3:
+                self.add_arg("threads", parts[3])
 
 
 class PortScanCommand(CommandBase):
