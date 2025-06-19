@@ -51,32 +51,49 @@ class PortScanArguments(TaskArguments):
             # JSON input
             temp_json = json.loads(self.command_line)
             if "target" in temp_json:
-                self.args[0].value = temp_json["target"]
+                self.add_arg("target", temp_json["target"])
             if "ports" in temp_json:
-                self.args[1].value = temp_json["ports"]
+                self.add_arg("ports", temp_json["ports"])
             if "timeout" in temp_json:
-                self.args[2].value = float(temp_json["timeout"])
+                self.add_arg("timeout", str(temp_json["timeout"]))
             if "threads" in temp_json:
-                self.args[3].value = int(temp_json["threads"])
+                self.add_arg("threads", str(temp_json["threads"]))
         else:
-            # Command line parsing
-            parts = self.command_line.split()
+            # Split command line and handle quoted arguments
+            parts = []
+            current_part = ""
+            in_quotes = False
+            quote_char = None
+            
+            for char in self.command_line:
+                if char in ['"', "'"] and not in_quotes:
+                    in_quotes = True
+                    quote_char = char
+                elif char == quote_char and in_quotes:
+                    in_quotes = False
+                    quote_char = None
+                elif char == ' ' and not in_quotes:
+                    if current_part:
+                        parts.append(current_part)
+                        current_part = ""
+                else:
+                    current_part += char
+            
+            if current_part:
+                parts.append(current_part)
+            
             if len(parts) < 2:
                 raise Exception("Require both target and ports.\n\tUsage: {}".format(PortScanCommand.help_cmd))
             
-            self.args[0].value = parts[0]  # target
-            self.args[1].value = parts[1]  # ports
+            # Set parameters explicitly
+            self.add_arg("target", parts[0])
+            self.add_arg("ports", parts[1])
             
             if len(parts) > 2:
-                try:
-                    self.args[2].value = parts[2]  # timeout as string, will convert later
-                except Exception:
-                    self.args[2].value = "1"
+                self.add_arg("timeout", parts[2])
+            
             if len(parts) > 3:
-                try:
-                    self.args[3].value = parts[3]  # threads as string, will convert later
-                except Exception:
-                    self.args[3].value = "100"
+                self.add_arg("threads", parts[3])
 
 
 class PortScanCommand(CommandBase):
