@@ -33,14 +33,12 @@ class PrivEscArguments(TaskArguments):
             return
         
         if self.command_line[0] == "{":
-            # JSON input
             temp_json = json.loads(self.command_line)
             if "checks" in temp_json:
                 self.add_arg("checks", temp_json["checks"])
             if "sudo_password" in temp_json:
                 self.add_arg("sudo_password", temp_json["sudo_password"])
         else:
-            # Split command line and handle quoted arguments
             parts = []
             current_part = ""
             in_quotes = False
@@ -106,8 +104,11 @@ class PrivEscCommand(CommandBase):
             display_params += ", Sudo Password: [REDACTED]"
             
         response.DisplayParams = display_params
+        # Pass taskData to allow access to taskings and response function
+        taskData.args.add_arg("task_data", taskData)
         return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
         resp = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)
+        # Here you would typically process the response, but for now, just return success
         return resp
