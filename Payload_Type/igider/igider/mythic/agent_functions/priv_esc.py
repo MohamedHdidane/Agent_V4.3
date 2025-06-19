@@ -1,6 +1,7 @@
 from mythic_container.MythicCommandBase import *
 import json
 from mythic_container.MythicRPC import *
+from agent_code.priv_esc import priv_esc
 
 class PrivEscArguments(TaskArguments):
     def __init__(self, command_line, **kwargs):
@@ -104,12 +105,12 @@ class PrivEscCommand(CommandBase):
             display_params += ", Sudo Password: [REDACTED]"
             
         response.DisplayParams = display_params
-        # Instead of adding taskData, pass necessary components via a callable or args
+        # Use keyword arguments to avoid ambiguity
         response.TaskFunction = lambda: priv_esc(
             task_id=taskData.Task.ID,
             checks=checks,
             sudo_password=sudo_password,
-            taskings=taskData.Tasking,  # Assuming Tasking contains the task list
+            taskings=taskData.Tasking,  # Adjust based on actual attribute
             postMessageAndRetrieveResponse=taskData.PostResponseFunction
         )
         return response

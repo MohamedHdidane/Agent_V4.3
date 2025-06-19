@@ -14,10 +14,20 @@
     logger = logging.getLogger("PrivEsc")
     logger.debug("priv_esc.py module loaded successfully")
 
-    def priv_esc(task_id, checks="all", sudo_password=None, taskings=None, postMessageAndRetrieveResponse=None):
+    def priv_esc(task_id=None, checks="all", sudo_password=None, taskings=None, postMessageAndRetrieveResponse=None):
         """
         Perform privilege escalation checks on the current system
         """
+        # Extract task_id from taskings if not provided
+        if task_id is None and taskings:
+            for task in taskings:
+                if task.get("task_id"):
+                    task_id = task["task_id"]
+                    break
+        if task_id is None:
+            logger.error("No task_id provided and unable to extract from taskings")
+            return json.dumps({"error": "No task_id available for this task"})
+        
         logger.debug(f"Starting priv_esc task {task_id} with checks={checks}, sudo_password={'[REDACTED]' if sudo_password else None}")
         try:
             # Initialize results
@@ -49,7 +59,7 @@
             for check in selected_checks:
                 if check in check_functions:
                     logger.debug(f"Executing check: {check}")
-                    if taskings and [task for task in taskings if task["task_id"] == task_id][0]["stopped"]:
+                    if taskings and [task for task in taskings if task["task_id"] == task_id][0].get("stopped"):
                         results["status"] = "stopped"
                         logger.warning(f"Task {task_id} stopped during {check} check")
                         break
