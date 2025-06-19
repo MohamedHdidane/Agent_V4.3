@@ -8,6 +8,8 @@
         Perform port scan on target host(s) with specified ports
         """
         try:
+            timeout = float(timeout)     
+            threads = int(threads)         
             # Parse target - can be single IP or IP range
             targets = self._parse_targets(target)
             port_list = self._parse_ports(ports)
