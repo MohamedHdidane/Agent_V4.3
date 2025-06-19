@@ -51,17 +51,6 @@ class PortScanArguments(TaskArguments):
         if len(self.command_line) == 0:
             raise Exception("Require target and ports to scan.\n\tUsage: {}".format(PortScanCommand.help_cmd))
         
-        if self.command_line[0] == "{":
-            # JSON input
-            temp_json = json.loads(self.command_line)
-            if "target" in temp_json:
-                self.add_arg("target", temp_json["target"])
-            if "ports" in temp_json:
-                self.add_arg("ports", temp_json["ports"])
-            if "timeout" in temp_json:
-                self.add_arg("timeout", str(temp_json["timeout"]))
-            if "threads" in temp_json:
-                self.add_arg("threads", str(temp_json["threads"]))
         else:
             # Split command line and handle quoted arguments
             parts = []
