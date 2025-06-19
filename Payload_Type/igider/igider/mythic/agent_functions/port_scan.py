@@ -38,7 +38,6 @@ class PortScanArguments(TaskArguments):
             CommandParameter(
                 name="threads", 
                 type=ParameterType.String, 
-                ui_position=4,
                 description="Maximum concurrent threads (default: 100)",
                 parameter_group_info=[ParameterGroupInfo(
                     ui_position=4,
