@@ -10,27 +10,27 @@ class PortScanArguments(TaskArguments):
             CommandParameter(
                 name="target", 
                 type=ParameterType.String, 
-                ui_position=0,
                 description="Target host/IP or IP range (e.g., 192.168.1.1, 192.168.1.1-10, 192.168.1.0/24)",
                 parameter_group_info=[ParameterGroupInfo(
+                    ui_position=1,
                     required=True
                 )]
             ),
             CommandParameter(
                 name="ports", 
                 type=ParameterType.String, 
-                ui_position=1,
                 description="Ports to scan (e.g., 80, 80-443, 21,22,80,443)",
                 parameter_group_info=[ParameterGroupInfo(
+                    ui_position=2,
                     required=True
                 )]
             ),
             CommandParameter(
                 name="timeout", 
                 type=ParameterType.String, 
-                ui_position=2,
                 description="Connection timeout in seconds (default: 1)",
                 parameter_group_info=[ParameterGroupInfo(
+                    ui_position=3,
                     required=False
                 )],
                 default_value="1"
@@ -38,9 +38,10 @@ class PortScanArguments(TaskArguments):
             CommandParameter(
                 name="threads", 
                 type=ParameterType.String, 
-                ui_position=3,
+                ui_position=4,
                 description="Maximum concurrent threads (default: 100)",
                 parameter_group_info=[ParameterGroupInfo(
+                    ui_position=4,
                     required=False
                 )],
                 default_value="100"
