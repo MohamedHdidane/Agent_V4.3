@@ -86,14 +86,14 @@ class PortScanArguments(TaskArguments):
                 raise Exception("Require both target and ports.\n\tUsage: {}".format(PortScanCommand.help_cmd))
             
             # Set parameters explicitly
-            self.add_arg("target", parts[0])
-            self.add_arg("ports", parts[1])
-            
-            if len(parts) > 2:
-                self.add_arg("timeout", parts[2])
+            self.add_arg("target", parts[1])
+            self.add_arg("ports", parts[2])
             
             if len(parts) > 3:
-                self.add_arg("threads", parts[3])
+                self.add_arg("timeout", parts[3])
+
+            if len(parts) > 4:
+                self.add_arg("threads", parts[4])
 
 
 class PortScanCommand(CommandBase):
