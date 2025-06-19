@@ -25,21 +25,21 @@ class PortScanArguments(TaskArguments):
             ),
             CommandParameter(
                 name="timeout", 
-                type=ParameterType.Number, 
+                type=ParameterType.String, 
                 description="Connection timeout in seconds (default: 1)",
                 parameter_group_info=[ParameterGroupInfo(
                     required=False
                 )],
-                default_value=1
+                default_value="1"
             ),
             CommandParameter(
                 name="threads", 
-                type=ParameterType.Number, 
+                type=ParameterType.String, 
                 description="Maximum concurrent threads (default: 100)",
                 parameter_group_info=[ParameterGroupInfo(
                     required=False
                 )],
-                default_value=100
+                default_value="100"
             ),
         ]
 
@@ -55,9 +55,9 @@ class PortScanArguments(TaskArguments):
             if "ports" in temp_json:
                 self.args[1].value = temp_json["ports"]
             if "timeout" in temp_json:
-                self.args[2].value = temp_json["timeout"]
+                self.args[2].value = float(temp_json["timeout"])
             if "threads" in temp_json:
-                self.args[3].value = temp_json["threads"]
+                self.args[3].value = int(temp_json["threads"])
         else:
             # Command line parsing
             parts = self.command_line.split()
@@ -68,9 +68,15 @@ class PortScanArguments(TaskArguments):
             self.args[1].value = parts[1]  # ports
             
             if len(parts) > 2:
-                self.args[2].value = int(parts[2])  # timeout
+                try:
+                    self.args[2].value = parts[2]  # timeout as string, will convert later
+                except Exception:
+                    self.args[2].value = "1"
             if len(parts) > 3:
-                self.args[3].value = int(parts[3])  # threads
+                try:
+                    self.args[3].value = parts[3]  # threads as string, will convert later
+                except Exception:
+                    self.args[3].value = "100"
 
 
 class PortScanCommand(CommandBase):
@@ -104,8 +110,19 @@ class PortScanCommand(CommandBase):
         
         target = taskData.args.get_arg("target")
         ports = taskData.args.get_arg("ports")
-        timeout = taskData.args.get_arg("timeout")
-        threads = taskData.args.get_arg("threads")
+        timeout_str = taskData.args.get_arg("timeout")
+        threads_str = taskData.args.get_arg("threads")
+        
+        # Convert string parameters to numbers with validation
+        try:
+            timeout = float(timeout_str) if timeout_str else 1.0
+        except (ValueError, TypeError):
+            timeout = 1.0
+            
+        try:
+            threads = int(threads_str) if threads_str else 100
+        except (ValueError, TypeError):
+            threads = 100
         
         response.DisplayParams = f"Target: {target}, Ports: {ports}, Timeout: {timeout}s, Threads: {threads}"
         return response
