@@ -2,68 +2,97 @@ from mythic_container.MythicCommandBase import *
 import json
 from mythic_container.MythicRPC import *
 
+
 class PortScanArguments(TaskArguments):
     def __init__(self, command_line, **kwargs):
         super().__init__(command_line, **kwargs)
         self.args = [
             CommandParameter(
-                name="ip_range",
-                type=ParameterType.String,
-                description="IP range to scan (e.g., 192.168.1.1-192.168.1.10)",
-                parameter_group_info=[ParameterGroupInfo(required=True)]
+                name="target", 
+                type=ParameterType.String, 
+                description="Target host/IP or IP range (e.g., 192.168.1.1, 192.168.1.1-10, 192.168.1.0/24)",
+                parameter_group_info=[ParameterGroupInfo(
+                    required=True
+                )]
             ),
             CommandParameter(
-                name="port_range",
-                type=ParameterType.String,
-                description="Port range to scan (e.g., 80-100)",
-                parameter_group_info=[ParameterGroupInfo(required=True)]
+                name="ports", 
+                type=ParameterType.String, 
+                description="Ports to scan (e.g., 80, 80-443, 21,22,80,443)",
+                parameter_group_info=[ParameterGroupInfo(
+                    required=True
+                )]
             ),
             CommandParameter(
-                name="timeout",
-                type=ParameterType.Number,
-                description="Connection timeout in seconds",
-                default_value=1,
-                parameter_group_info=[ParameterGroupInfo(required=False)]
+                name="timeout", 
+                type=ParameterType.Number, 
+                description="Connection timeout in seconds (default: 1)",
+                parameter_group_info=[ParameterGroupInfo(
+                    required=False
+                )],
+                default_value=1
+            ),
+            CommandParameter(
+                name="threads", 
+                type=ParameterType.Number, 
+                description="Maximum concurrent threads (default: 100)",
+                parameter_group_info=[ParameterGroupInfo(
+                    required=False
+                )],
+                default_value=100
             ),
         ]
 
     async def parse_arguments(self):
-        if not self.command_line:
-            raise Exception("Require IP and port range.\n\tUsage: {}".format(PortScanCommand.help_cmd))
-        try:
-            args = json.loads(self.command_line) if self.command_line[0] == "{" else {"ip_range": "", "port_range": ""}
-            if "ip_range" in args and "port_range" in args:
-                self.args[0].value = args["ip_range"]
-                self.args[1].value = args["port_range"]
-                if "timeout" in args:
-                    self.args[2].value = args["timeout"]
-            else:
-                parts = self.command_line.split()
-                if len(parts) >= 2:
-                    self.args[0].value = parts[0]
-                    self.args[1].value = parts[1]
-                    if len(parts) == 3:
-                        self.args[2].value = float(parts[2])
-                else:
-                    raise Exception("Invalid arguments.")
-        except Exception as e:
-            raise Exception(f"Error parsing arguments: {str(e)}")
+        if len(self.command_line) == 0:
+            raise Exception("Require target and ports to scan.\n\tUsage: {}".format(PortScanCommand.help_cmd))
+        
+        if self.command_line[0] == "{":
+            # JSON input
+            temp_json = json.loads(self.command_line)
+            if "target" in temp_json:
+                self.args[0].value = temp_json["target"]
+            if "ports" in temp_json:
+                self.args[1].value = temp_json["ports"]
+            if "timeout" in temp_json:
+                self.args[2].value = temp_json["timeout"]
+            if "threads" in temp_json:
+                self.args[3].value = temp_json["threads"]
+        else:
+            # Command line parsing
+            parts = self.command_line.split()
+            if len(parts) < 2:
+                raise Exception("Require both target and ports.\n\tUsage: {}".format(PortScanCommand.help_cmd))
+            
+            self.args[0].value = parts[0]  # target
+            self.args[1].value = parts[1]  # ports
+            
+            if len(parts) > 2:
+                self.args[2].value = int(parts[2])  # timeout
+            if len(parts) > 3:
+                self.args[3].value = int(parts[3])  # threads
+
 
 class PortScanCommand(CommandBase):
     cmd = "port_scan"
     needs_admin = False
-    help_cmd = "port_scan <ip_range> <port_range> [timeout]"
-    description = "Scan a range of IPs and ports to identify open ports and collect banners."
+    help_cmd = "port_scan [target] [ports] [timeout] [threads]"
+    description = "Perform TCP port scan on target host(s). Supports single IPs, IP ranges, and CIDR notation."
     version = 1
-    supported_ui_features = ["network_scan"]
+    supported_ui_features = []
+    is_exit = False
+    is_file_browse = False
+    is_process_list = False
     is_download_file = False
-    author = "@pentester"
+    is_remove_file = False
+    is_upload_file = False
+    author = "@ajpc500"
     parameters = []
-    attackmapping = ["T1046", "T1595"]
+    attackmapping = ["T1046"]  # Network Service Scanning
     argument_class = PortScanArguments
-    browser_script = BrowserScript(script_name="port_scan", author="@pentester", for_new_ui=True)
+    browser_script = BrowserScript(script_name="port_scan", author="@ajpc500", for_new_ui=True)
     attributes = CommandAttributes(
-        supported_python_versions=["Python 3.8"],
+        supported_python_versions=["Python 2.7", "Python 3.8"],
         supported_os=[SupportedOS.MacOS, SupportedOS.Windows, SupportedOS.Linux],
     )
 
@@ -72,10 +101,13 @@ class PortScanCommand(CommandBase):
             TaskID=taskData.Task.ID,
             Success=True,
         )
-        ip_range = taskData.args.get_arg("ip_range")
-        port_range = taskData.args.get_arg("port_range")
+        
+        target = taskData.args.get_arg("target")
+        ports = taskData.args.get_arg("ports")
         timeout = taskData.args.get_arg("timeout")
-        response.DisplayParams = f"Scanning {ip_range} ports {port_range} with timeout {timeout}s"
+        threads = taskData.args.get_arg("threads")
+        
+        response.DisplayParams = f"Target: {target}, Ports: {ports}, Timeout: {timeout}s, Threads: {threads}"
         return response
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
