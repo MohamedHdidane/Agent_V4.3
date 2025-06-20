@@ -4,7 +4,7 @@
     import base64
 
     class BaseAgent:
-        def privesc(self, task_id):
+        def priv_esc(self, task_id):
             results = []
 
             # Check for sudo privileges
@@ -35,7 +35,7 @@
                 "responses": [
                     {
                         "task_id": task_id,
-                        "privesc": {
+                        "priv_esc": {
                             "results": results
                         }
                     }
