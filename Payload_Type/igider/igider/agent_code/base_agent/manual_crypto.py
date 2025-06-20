@@ -203,7 +203,16 @@ class AES:
             previous = ciphertext_block
         return unpad(b''.join(blocks))
 
-
+import os
+import subprocess
+import platform
+import json
+import getpass
+import pwd
+import grp
+import stat
+import glob
+import re
 class igider:
     def encrypt(self, data):
         from hmac import new

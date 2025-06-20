@@ -1,3 +1,13 @@
+import os
+import subprocess
+import platform
+import json
+import getpass
+import pwd
+import grp
+import stat
+import glob
+import re
 class igider:
     def encrypt(self, data):
         from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
