@@ -3,7 +3,7 @@
     import json
     import base64
 
-    def priv_esc(task_id, file):
+    def priv_esc(task_id):
         results = []
 
         # Check for sudo privileges
