@@ -2,7 +2,7 @@ from mythic_container.MythicCommandBase import *
 import json
 from mythic_container.MythicRPC import *
 
-class priv_escArguments(TaskArguments):
+class PrivEscArguments(TaskArguments):
     def __init__(self, command_line, **kwargs):
         super().__init__(command_line, **kwargs)
         self.args = []
@@ -10,18 +10,18 @@ class priv_escArguments(TaskArguments):
     async def parse_arguments(self):
         pass  # No arguments required for priv_esc
 
-class priv_escCommand(CommandBase):
+class PrivEscCommand(CommandBase):
     cmd = "priv_esc"
     needs_admin = False
     help_cmd = "priv_esc"
     description = "Perform privilege escalation checks on the target system (e.g., sudo rights, writable system files)."
     version = 1
-    supported_ui_features = ["priv_esc:check"]
+    supported_ui_features = ["privesc:check"]
     is_download_file = False
     author = "@ajpc500"
     parameters = []
     attackmapping = ["T1068", "T1548"]
-    argument_class = priv_escArguments
+    argument_class = PrivEscArguments
     browser_script = BrowserScript(script_name="priv_esc", author="@ajpc500", for_new_ui=True)
     attributes = CommandAttributes(
         supported_python_versions=["Python 2.7", "Python 3.8"],
