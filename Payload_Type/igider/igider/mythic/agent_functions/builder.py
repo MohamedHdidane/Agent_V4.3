@@ -349,7 +349,7 @@ class Igider(PayloadType):
         build_errors = []
         
         try:
-            selected_os = self.get_parameter("selected_os")
+            selected_os = self.selected_os
             await self.update_build_step("Detecting OS", f"Selected OS: {selected_os}")
             if not selected_os:
                 build_errors.append("No 'selected_os' parameter provided in build_parameters")
@@ -490,7 +490,7 @@ class Igider(PayloadType):
                     return resp
             else:  # default to py
                 resp.payload = base_code.encode()
-                resp.build_message = "Successfully built Python script payload"
+                resp.build_message = f"Selected OS: {selected_os}"
             
             # Report any non-fatal errors
             if build_errors:
