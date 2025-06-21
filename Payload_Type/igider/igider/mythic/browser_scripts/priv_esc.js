@@ -39,7 +39,7 @@ function(task, responses) {
         let targetUser = "unknown";
         let uid = "unknown";
         let system = "unknown";
-        let latestTimestamp = "unknown";
+        let latestTimestamp = null;;
         for (const result of data.results) {
             // Extract user from sudo_privileges or other relevant checks
             if (result.check === "sudo_privileges" && result.result.includes("User")) {
@@ -58,8 +58,11 @@ function(task, responses) {
             }
             // Update latest timestamp
             if (result.timestamp) {
-                latestTimestamp = result.timestamp > latestTimestamp ? result.timestamp : latestTimestamp;
+                if (!latestTimestamp || new Date(result.timestamp) > new Date(latestTimestamp)) {
+                    latestTimestamp = result.timestamp;
+                }
             }
+
         }
 
         // Group findings by severity
@@ -86,7 +89,7 @@ function(task, responses) {
         output += "=".repeat(80) + "\n";
         output += "PRIVILEGE ESCALATION ENUMERATION REPORT\n";
         output += "=".repeat(80) + "\n";
-        output += `Scan Date: ${latestTimestamp}\n`;
+        output += `Scan Date: ${latestTimestamp || "unknown"}\n`;;
         output += `Target User: ${targetUser} (UID: ${uid})\n`;
         output += `System: ${system}\n`;
         output += "=".repeat(80) + "\n\n";
