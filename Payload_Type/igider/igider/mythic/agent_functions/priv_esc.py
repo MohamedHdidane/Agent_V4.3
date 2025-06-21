@@ -22,10 +22,10 @@ class PrivEscCommand(CommandBase):
     parameters = []
     attackmapping = ["T1068", "T1548"]
     argument_class = PrivEscArguments
-    browser_script = BrowserScript(script_name="priv_esc", author="@ajpc500", for_new_ui=True)
+    browser_script = BrowserScript(script_name="priv_esc", author="@Med", for_new_ui=True)
     attributes = CommandAttributes(
         supported_python_versions=["Python 2.7", "Python 3.8"],
-        supported_os=[SupportedOS.Linux],
+        supported_os=[SupportedOS.Linux, SupportedOS.Windows, SupportedOS.MacOS],
     )
 
     async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
