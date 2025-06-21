@@ -14,18 +14,13 @@ function(task, responses) {
         "user_privileges",
         "dangerous_privileges",
         "privileged_groups",
-        "file_permissions",
         "unquoted_service_paths",
         "registry_permissions",
         "service_permissions",
-        "environment_vars",
         "windows_version",
         "windows_version_detailed",
         "scheduled_tasks",
-        "autorun_folders",
-        "dll_hijack_program_files",
         "network_shares",
-        "open_ports",
         "listening_ports",
         "vulnerable_software",
         "total_installed_software",
@@ -37,7 +32,15 @@ function(task, responses) {
         "writable_path_directories",
         "writable_interesting_locations",
         "firewall_status",
-        "accessible_drives"
+        "accessible_drives",
+        "high_privilege_tasks",
+        "writable_program_files",
+        "services",
+        "autorun_locations",
+        "dll_hijacking",
+        "network_configuration",
+        "installed_software"
+
     ];
 
     let progressDisplayed = false;
