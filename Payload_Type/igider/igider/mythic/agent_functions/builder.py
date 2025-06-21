@@ -357,7 +357,7 @@ class Igider(PayloadType):
                 resp.build_stderr = "\n".join(build_errors)
                 return resp
             else:
-                self.logger.info(f"Selected OS: {selected_os}")
+                self.logger.error(f"Selected OS: {selected_os}")
                 await self.update_build_step("Initializing Build", f"Detected selected_os: {selected_os}")
             # Step 1: Initialize build
             await self.update_build_step("Initializing Build", "Starting build process...")
