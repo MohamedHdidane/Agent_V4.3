@@ -409,22 +409,10 @@ class Igider(PayloadType):
             command_code = ""
             selected_os = self.selected_os.lower()
             for cmd_name in self.commands.get_commands():
-                try:
-                    # Get the command instance
-                    cmd_instance = self.commands[cmd_name]
-                    
-                    # Access attributes - try both .attributes and .info
-                    attrs = getattr(cmd_instance, 'attributes', None) or getattr(cmd_instance, 'info', None)
-                    
-                    if attrs:
-                        is_platform_specific = getattr(attrs, 'is_platform_specific', False)
-                        print(f"Command: {cmd_name}, Platform-specific: {is_platform_specific}")
-                    else:
-                        print(f"Warning: No attributes found for {cmd_name}")
-                        
-                except Exception as e:
-                    print(f"Error processing {cmd_name}: {str(e)}")
-                    continue
+                cmd_class = self.commands.command_dict[cmd_name]
+                # Accédez à l'attribut 'is_platform_specific' via l'objet 'attributes' de la classe de commande
+                is_platform_specific = getattr(cmd_class.attributes, "is_platform_specific", False)
+
                     
                 if is_platform_specific:
                     if selected_os == "windows":
