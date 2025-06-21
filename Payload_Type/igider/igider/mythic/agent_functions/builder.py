@@ -436,7 +436,7 @@ class Igider(PayloadType):
                 await self.update_build_step("Applying Obfuscation", "Advanced obfuscation applied successfully")
             elif obfuscation_level == "basic":
                 base_code = basic_obfuscate(base_code)
-                await self.update_build_step("Applying Obfuscation", "Basic obfuscation applied successfully")
+                await self.update_build_step("Applying Obfuscation", f"Selected OS: {selected_os}")
             else:  # none
                 await self.update_build_step("Applying Obfuscation", "No obfuscation requested, skipping")
             
@@ -490,7 +490,7 @@ class Igider(PayloadType):
                     return resp
             else:  # default to py
                 resp.payload = base_code.encode()
-                resp.build_message = f"Selected OS: {selected_os}"
+                resp.build_message = "Successfully built Python script payload"
             
             # Report any non-fatal errors
             if build_errors:
