@@ -350,6 +350,7 @@ class Igider(PayloadType):
         
         try:
             selected_os = self.selected_os
+            await self.update_build_step("Applying Obfuscation", selected_os)
             if not selected_os:
                 build_errors.append("No 'selected_os' parameter provided in build_parameters")
                 await self.update_build_step("Initializing Build", "Error: No 'selected_os' parameter provided", False)
