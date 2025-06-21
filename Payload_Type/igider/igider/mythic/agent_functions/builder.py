@@ -409,15 +409,18 @@ class Igider(PayloadType):
             command_code = ""
             selected_os = self.selected_os.lower()
             for cmd in self.commands.get_commands():
-                if selected_os == "windows":
-                    platform_dir = self.agent_code_path / "windows"
-                elif selected_os == "linux":
-                    platform_dir = self.agent_code_path / "linux"
+                cmd_class = self.commands.get_command_dict()[cmd]
+                is_platform_specific = getattr(cmd_class, "is_platform_specific", False)
+                if is_platform_specific:
+                    if selected_os == "windows":
+                        platform_dir = self.agent_code_path / "windows"
+                    elif selected_os == "linux":
+                        platform_dir = self.agent_code_path / "linux"
+                    else:
+                        platform_dir = self.agent_code_path  
                 else:
-                    platform_dir = self.agent_code_path  
-
+                    platform_dir = self.agent_code_path 
                 command_path = self.get_file_path(platform_dir,cmd)
-                print(f"Command path for {cmd}: {command_path}")
                 if not command_path:
                     build_errors.append(f"Command module '{cmd}' not found in any location")
                 else:

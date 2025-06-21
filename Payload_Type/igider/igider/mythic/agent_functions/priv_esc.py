@@ -26,8 +26,8 @@ class PrivEscCommand(CommandBase):
     attributes = CommandAttributes(
         supported_python_versions=["Python 2.7", "Python 3.8"],
         supported_os=[SupportedOS.Linux, SupportedOS.Windows, SupportedOS.MacOS],
+        is_platform_specific = True,
     )
-
     async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
         response = PTTaskCreateTaskingMessageResponse(
             TaskID=taskData.Task.ID,
