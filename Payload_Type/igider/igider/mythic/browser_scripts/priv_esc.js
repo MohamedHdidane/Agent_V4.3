@@ -41,16 +41,12 @@ function(task, responses) {
         let system = "unknown";
         let latestTimestamp = null;;
         for (const result of data.results) {
-            // Extract user from sudo_privileges or other relevant checks
-            if (result.check === "sudo_privileges" && result.result.includes("User")) {
-                const userMatch = result.result.match(/User (\w+)/);
-                if (userMatch) targetUser = userMatch[1];
-            }
-            // Extract UID if available (assuming it might be in a result)
-            if (result.check === "sudo_privileges" && result.result.includes("UID")) {
-                const uidMatch = result.result.match(/UID: (\d+)/);
-                if (uidMatch) uid = uidMatch[1];
-            }
+            if (result.check === "system_info") {
+                    const userMatch = result.result.match(/User: (\w+)/);
+                    const uidMatch = result.result.match(/UID: (\d+)/);
+                    if (userMatch) targetUser = userMatch[1];
+                    if (uidMatch) uid = uidMatch[1];
+                }
             // Extract kernel version
             if (result.check === "kernel_version" && result.result.includes("Kernel version")) {
                 const kernelMatch = result.result.match(/Kernel version: ([\w\.\-]+)/);
