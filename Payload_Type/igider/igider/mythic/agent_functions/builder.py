@@ -414,15 +414,10 @@ class Igider(PayloadType):
                 elif selected_os == "linux":
                     platform_dir = self.agent_code_path / "linux"
                 else:
-                    platform_dir = None  # macOS or others: no platform-specific cmd directory
+                    platform_dir = self.agent_code_path  
 
-                command_path = ""  
-
-                if platform_dir:
-                    command_path = self.get_file_path(platform_dir, cmd)
-                else:
-                    command_path = self.get_file_path(self.agent_code_path, cmd)
-                
+                command_path = self.get_file_path(platform_dir,cmd)
+                print(f"Command path for {cmd}: {command_path}")
                 if not command_path:
                     build_errors.append(f"Command module '{cmd}' not found in any location")
                 else:
