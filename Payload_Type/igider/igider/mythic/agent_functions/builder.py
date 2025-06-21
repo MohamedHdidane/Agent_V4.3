@@ -409,7 +409,7 @@ class Igider(PayloadType):
             command_code = ""
             selected_os = self.selected_os.lower()
             for cmd in self.commands.get_commands():
-                cmd_class = self.commands.getcommand(cmd)
+                cmd_class = self.commands.get_command(cmd)
                 is_platform_specific = cmd_class.attributes.is_platform_specific if cmd_class else False
                 if is_platform_specific:
                     if selected_os == "windows":
