@@ -105,7 +105,7 @@ class Igider(PayloadType):
         logger.setLevel(logging.DEBUG)
         return logger
 
-
+    @staticmethod
     def clean_code(code: str) -> str:
         lines = code.splitlines()
         import_lines = []
