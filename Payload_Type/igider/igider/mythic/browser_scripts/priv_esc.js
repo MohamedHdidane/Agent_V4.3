@@ -2,6 +2,7 @@ function(task, responses) {
     // Initialize output and state
     let output = "";
     const checks = [
+        "system_info",
         "sudo_privileges", "privileged_groups", "file_permissions", "suid_sgid_binaries",
         "capabilities", "kernel_version", "dirty_cow", "kernel_vulnerabilities", 
         "cron_permissions", "environment_vars", "root_processes", "network_services", 
