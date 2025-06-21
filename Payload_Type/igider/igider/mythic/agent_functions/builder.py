@@ -349,6 +349,16 @@ class Igider(PayloadType):
         build_errors = []
         
         try:
+            selected_os = self.get_parameter("selected_os")
+            if not selected_os:
+                build_errors.append("No 'selected_os' parameter provided in build_parameters")
+                await self.update_build_step("Initializing Build", "Error: No 'selected_os' parameter provided", False)
+                resp.set_status(BuildStatus.Error)
+                resp.build_stderr = "\n".join(build_errors)
+                return resp
+            else:
+                self.logger.info(f"Selected OS: {selected_os}")
+                await self.update_build_step("Initializing Build", f"Detected selected_os: {selected_os}")
             # Step 1: Initialize build
             await self.update_build_step("Initializing Build", "Starting build process...")
             # Step 2: Gather components
