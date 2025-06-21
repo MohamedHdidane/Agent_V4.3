@@ -73,6 +73,9 @@ function(task, responses) {
             }
         }
 
+        // Get performed checks
+        const performedChecks = [...new Set(data.results.map(r => r.check))];
+
         // Group findings by severity
         const severityGroups = {
             critical: [],
@@ -91,9 +94,10 @@ function(task, responses) {
         // Build report
         output = "";
         output += "Starting privilege escalation enumeration...\n";
-        for (const check of allChecks) {
-            const hasCheck = data.results.some(r => r.check === check);
-            output += `  Checking ${check.replace(/_/g, ' ')}... [${hasCheck ? 'DONE' : 'SKIPPED'}]\n`;
+        for (const check of performedChecks) {
+            if (allChecks.includes(check)) {
+                output += `  Checking ${check.replace(/_/g, ' ')}... [DONE]\n`;
+            }
         }
         output += "=".repeat(80) + "\n";
         output += "PRIVILEGE ESCALATION ENUMERATION REPORT\n";
