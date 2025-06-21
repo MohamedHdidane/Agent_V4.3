@@ -21,29 +21,36 @@ function(task, responses) {
         return { plaintext: `Task error: ${combined}` };
     }
 
-    // Determine platform and relevant checks
+    // Determine platform
     let platform = "unknown";
-    let relevantChecks = [];
-    let data = null;
+    let relevantChecks = [...new Set([...linuxChecks, ...windowsChecks])];
 
-    try {
-        data = JSON.parse(responses[0]);
-        if (data.status === "completed" && data.results) {
-            for (const result of data.results) {
-                if (result.check === "kernel_version" && result.result.includes("Kernel version")) {
-                    platform = "linux";
-                    break;
-                } else if (result.check === "windows_version") {
-                    platform = "windows";
-                    break;
+    // Try to infer platform from responses
+    if (responses && responses.length > 0) {
+        try {
+            const data = JSON.parse(responses[0]);
+            if (data.results) {
+                for (const result of data.results) {
+                    if (result.check === "kernel_version" && result.result.includes("Kernel version")) {
+                        platform = "linux";
+                        break;
+                    } else if (result.check === "windows_version") {
+                        platform = "windows";
+                        break;
+                    }
                 }
             }
+        } catch (error) {
+            // If parsing fails, continue with unknown platform
         }
-    } catch (error) {
-        // Fallback to showing all checks if parsing fails or in pending state
     }
 
-    relevantChecks = platform === "linux" ? linuxChecks : platform === "windows" ? windowsChecks : [...new Set([...linuxChecks, ...windowsChecks])];
+    // Set relevant checks based on platform
+    if (platform === "linux") {
+        relevantChecks = linuxChecks;
+    } else if (platform === "windows") {
+        relevantChecks = windowsChecks;
+    }
 
     // Handle pending state
     if (!task.completed) {
@@ -59,8 +66,9 @@ function(task, responses) {
 
     // Handle completed state
     try {
-        // Validate JSON response
-        if (!data || data.status !== "completed" || !data.results) {
+        // Parse JSON response
+        const data = JSON.parse(responses[0]);
+        if (data.status !== "completed" || !data.results) {
             throw new Error("Invalid response format");
         }
 
@@ -81,16 +89,22 @@ function(task, responses) {
             }
             // Extract system info
             if (result.check === "kernel_version" && result.result.includes("Kernel version")) {
-                const kernelMatch = result.result.match(/Kernel version: ([\w\.\-]+)/);
+                const kernelMatch = result.result.match(/Kernel\s*version:\s*([\w\.\-]+)/i);
                 if (kernelMatch) system = `Linux ${kernelMatch[1]}`;
             } else if (result.check === "windows_version") {
-                const versionMatch = result.result.match(/Windows version: (.+)/);
+                const versionMatch = result.result.match(/Windows\s*version:\s*([\w\s\-\.]+)/i);
                 if (versionMatch) system = versionMatch[1];
             }
             // Update latest timestamp
             if (result.timestamp) {
-                if (!latestTimestamp || new Date(result.timestamp) > new Date(latestTimestamp)) {
-                    latestTimestamp = result.timestamp;
+                try {
+                    const timestamp = new Date(result.timestamp);
+                    if (!latestTimestamp || timestamp > new Date(latestTimestamp)) {
+                        latestTimestamp = result.timestamp;
+                    }
+                } catch (error) {
+                    // Skip invalid timestamps
+                    continue;
                 }
             }
         }
@@ -107,6 +121,7 @@ function(task, responses) {
             info: [],
             error: []
         };
+
         for (const result of data.results) {
             if (result.severity && result.check && relevantChecks.includes(result.check)) {
                 severityGroups[result.severity.toLowerCase()].push(result);
@@ -120,12 +135,14 @@ function(task, responses) {
             output += `  Checking ${check.replace(/_/g, ' ')}... [DONE]\n`;
         }
         output += "=".repeat(80) + "\n";
-        output += "PRIVILEGE ESCALATION ENUMERATION REPORT\n";
+        output += "PRIVILEGE ESCALATION REPORT\n";
         output += "=".repeat(80) + "\n";
-        output += `Scan Date: ${latestTimestamp || "unknown"}\n`;
-        output += `Target User: ${targetUser}\n`;
+        output += `Scan Date: ${latestTimestamp || "unknown"}`;
+        output += `\nTarget User: ${targetUser}\n`;
         output += `System: ${system}\n`;
-        if (isAdmin !== "unknown") output += `Administrator: ${isAdmin}\n`;
+        if (isAdmin !== "unknown") {
+            output += `Administrator: ${isAdmin}\n`;
+        }
         output += "=".repeat(80) + "\n\n";
 
         // Display findings by severity
