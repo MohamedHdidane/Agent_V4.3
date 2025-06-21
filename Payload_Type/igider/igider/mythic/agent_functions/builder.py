@@ -349,7 +349,7 @@ class Igider(PayloadType):
         build_errors = []
         
         try:
-            selected_os = self.selected_os
+            selected_os = self.get_parameter("selected_os")
             await self.update_build_step("Detecting OS", f"Selected OS: {selected_os}")
             if not selected_os:
                 build_errors.append("No 'selected_os' parameter provided in build_parameters")
