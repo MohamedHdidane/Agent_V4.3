@@ -256,11 +256,11 @@ CRYPTO_MODULE_PLACEHOLDER
 
 #COMMANDS_PLACEHOLDER
 
-        """
-        Initializes the agent object.
-        It sets up queues for socks connections, a list to track tasks, a cache for metadata, and the agent's configuration loaded from predefined variables.
-        It then enters the main loop for agent operation, handling check-in, tasking, and response posting.
-        """
+    """
+    Initializes the agent object.
+    It sets up queues for socks connections, a list to track tasks, a cache for metadata, and the agent's configuration loaded from predefined variables.
+    It then enters the main loop for agent operation, handling check-in, tasking, and response posting.
+    """
     def __init__(self):
         self.socks_open = {}
         self.socks_in = queue.Queue()
