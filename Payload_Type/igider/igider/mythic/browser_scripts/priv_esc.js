@@ -11,7 +11,8 @@ function(task, responses) {
     const windowsChecks = [
         "admin_check", "uac_status", "dangerous_privileges", "privileged_groups",
         "file_permissions", "unquoted_service_paths", "registry_permissions",
-        "environment_vars", "windows_version"
+        "environment_vars", "windows_version","scheduled_tasks","autorun_folders","dll_hijack_program_files","network_shares","open_ports",
+        "vulnerable_software","writable_drive_root"
     ];
     let progressDisplayed = false;
 
