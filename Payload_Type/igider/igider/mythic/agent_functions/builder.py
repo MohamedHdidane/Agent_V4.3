@@ -409,8 +409,8 @@ class Igider(PayloadType):
             command_code = ""
             selected_os = self.selected_os.lower()
             for cmd in self.commands.get_commands():
-                cmd_class = self.commands.get_command_from_name(cmd)
-                is_platform_specific = getattr(cmd_class, "is_platform_specific", False)
+                cmd_class = self.commands.command_dict[cmd]
+                is_platform_specific = getattr(cmd_class.attributes, "is_platform_specific", False)
                 if is_platform_specific:
                     if selected_os == "windows":
                         platform_dir = self.agent_code_path / "windows"
