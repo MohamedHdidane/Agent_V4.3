@@ -13,7 +13,6 @@ function(task, responses) {
         "file_permissions", "unquoted_service_paths", "registry_permissions",
         "environment_vars", "windows_version"
     ];
-    const allChecks = [...new Set([...linuxChecks, ...windowsChecks])];
     let progressDisplayed = false;
 
     // Handle error state
@@ -22,11 +21,35 @@ function(task, responses) {
         return { plaintext: `Task error: ${combined}` };
     }
 
+    // Determine platform and relevant checks
+    let platform = "unknown";
+    let relevantChecks = [];
+    let data = null;
+
+    try {
+        data = JSON.parse(responses[0]);
+        if (data.status === "completed" && data.results) {
+            for (const result of data.results) {
+                if (result.check === "kernel_version" && result.result.includes("Kernel version")) {
+                    platform = "linux";
+                    break;
+                } else if (result.check === "windows_version") {
+                    platform = "windows";
+                    break;
+                }
+            }
+        }
+    } catch (error) {
+        // Fallback to showing all checks if parsing fails or in pending state
+    }
+
+    relevantChecks = platform === "linux" ? linuxChecks : platform === "windows" ? windowsChecks : [...new Set([...linuxChecks, ...windowsChecks])];
+
     // Handle pending state
     if (!task.completed) {
         if (!progressDisplayed) {
             output = "Starting privilege escalation enumeration...\n";
-            for (const check of allChecks) {
+            for (const check of relevantChecks) {
                 output += `  Checking ${check.replace(/_/g, ' ')}...\n`;
             }
             progressDisplayed = true;
@@ -36,9 +59,8 @@ function(task, responses) {
 
     // Handle completed state
     try {
-        // Parse JSON response
-        let data = JSON.parse(responses[0]);
-        if (data.status !== "completed" || !data.results) {
+        // Validate JSON response
+        if (!data || data.status !== "completed" || !data.results) {
             throw new Error("Invalid response format");
         }
 
@@ -74,7 +96,7 @@ function(task, responses) {
         }
 
         // Get performed checks
-        const performedChecks = [...new Set(data.results.map(r => r.check))];
+        const performedChecks = [...new Set(data.results.map(r => r.check))].filter(check => relevantChecks.includes(check));
 
         // Group findings by severity
         const severityGroups = {
@@ -86,7 +108,7 @@ function(task, responses) {
             error: []
         };
         for (const result of data.results) {
-            if (result.severity && result.check) {
+            if (result.severity && result.check && relevantChecks.includes(result.check)) {
                 severityGroups[result.severity.toLowerCase()].push(result);
             }
         }
@@ -95,9 +117,7 @@ function(task, responses) {
         output = "";
         output += "Starting privilege escalation enumeration...\n";
         for (const check of performedChecks) {
-            if (allChecks.includes(check)) {
-                output += `  Checking ${check.replace(/_/g, ' ')}... [DONE]\n`;
-            }
+            output += `  Checking ${check.replace(/_/g, ' ')}... [DONE]\n`;
         }
         output += "=".repeat(80) + "\n";
         output += "PRIVILEGE ESCALATION ENUMERATION REPORT\n";
