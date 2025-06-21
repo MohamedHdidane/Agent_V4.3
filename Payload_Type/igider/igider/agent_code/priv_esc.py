@@ -5,7 +5,6 @@
             current_user = getpass.getuser()
             current_uid = os.getuid()
             current_gid = os.getgid()
-            log_result("system_info", f"User: {current_user}, UID: {current_uid}, GID: {current_gid}", "info")
 
             # Helper method to log results with severity and timestamp
             def log_result(check_name, result, severity="info"):
@@ -15,6 +14,7 @@
                     "severity": severity,
                     "timestamp": datetime.now().isoformat()
                 })
+            log_result("system_info", f"User: {current_user}, UID: {current_uid}, GID: {current_gid}", "info")
 
             # Helper method to run commands safely
             def run_command(cmd, timeout=15, shell=False):
