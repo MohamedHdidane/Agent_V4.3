@@ -54,15 +54,17 @@ function(task, responses) {
 
     // Handle pending state
     if (!task.completed) {
-        if (!progressDisplayed) {
-            output = "Starting privilege escalation enumeration...\n";
+        output = "Starting privilege escalation enumeration...\n";
+        if (platform === "unknown") {
+            output += "  Detecting platform...\n";
+        } else {
             for (const check of relevantChecks) {
                 output += `  Checking ${check.replace(/_/g, ' ')}...\n`;
             }
-            progressDisplayed = true;
         }
         return { plaintext: output };
     }
+
 
     // Handle completed state
     try {
