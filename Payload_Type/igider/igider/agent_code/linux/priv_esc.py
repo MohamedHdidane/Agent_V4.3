@@ -1,3 +1,5 @@
+    import pwd
+    import grp
     def priv_esc(self, task_id, **kwargs):
             results = []
 

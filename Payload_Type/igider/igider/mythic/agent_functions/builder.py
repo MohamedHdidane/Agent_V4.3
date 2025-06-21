@@ -22,6 +22,8 @@ import tempfile
 import subprocess
 import sys
 import shutil
+import re
+from collections import OrderedDict
 
 class Igider(PayloadType):
     name = "igider"
@@ -102,6 +104,28 @@ class Igider(PayloadType):
         logger = logging.getLogger("igider_builder")
         logger.setLevel(logging.DEBUG)
         return logger
+
+
+    def clean_code(code: str) -> str:
+        lines = code.splitlines()
+        import_lines = []
+        body_lines = []
+
+        # Regex to match import statements
+        import_pattern = re.compile(r'^\s*(import\s+[^\n]+|from\s+\S+\s+import\s+[^\n]+)\s*$')
+
+        for line in lines:
+            if import_pattern.match(line):
+                import_lines.append(line.strip())
+            else:
+                body_lines.append(line)
+
+        # Deduplicate imports while preserving order
+        unique_imports = list(OrderedDict.fromkeys(import_lines))
+
+        # Final cleaned code
+        cleaned_code = "\n".join(unique_imports) + "\n\n" + "\n".join(body_lines)
+        return cleaned_code
 
     def get_file_path(self, directory: pathlib.Path, file: str) -> str:
         """Get the full path to a file, verifying its existence."""
@@ -349,17 +373,7 @@ class Igider(PayloadType):
         build_errors = []
         
         try:
-            selected_os = self.selected_os
-            await self.update_build_step("Detecting OS", f"Selected OS: {selected_os}")
-            if not selected_os:
-                build_errors.append("No 'selected_os' parameter provided in build_parameters")
-                await self.update_build_step("Initializing Build", "Error: No 'selected_os' parameter provided", False)
-                resp.set_status(BuildStatus.Error)
-                resp.build_stderr = "\n".join(build_errors)
-                return resp
-            else:
-                self.logger.error(f"Selected OS: {selected_os}")
-                await self.update_build_step("Initializing Build", f"Detected selected_os: {selected_os}")
+
             # Step 1: Initialize build
             await self.update_build_step("Initializing Build", "Starting build process...")
             # Step 2: Gather components
@@ -393,10 +407,24 @@ class Igider(PayloadType):
             ###############################################################################################
                 # Load command modules
             command_code = ""
+            selected_os = self.selected_os.lower()
             for cmd in self.commands.get_commands():
-                command_path = self.get_file_path(self.agent_code_path, cmd)
+                if selected_os == "windows":
+                    platform_dir = self.agent_code_path / "windows"
+                elif selected_os == "linux":
+                    platform_dir = self.agent_code_path / "linux"
+                else:
+                    platform_dir = None  # macOS or others: no platform-specific cmd directory
+
+                command_path = ""  
+
+                if platform_dir:
+                    command_path = self.get_file_path(platform_dir, cmd)
+                else:
+                    command_path = self.get_file_path(self.agent_code_path, cmd)
+                
                 if not command_path:
-                    build_errors.append(f"Command module '{cmd}' not found")
+                    build_errors.append(f"Command module '{cmd}' not found in any location")
                 else:
                     command_code += self._load_module_content(command_path) + "\n"
             
@@ -424,6 +452,8 @@ class Igider(PayloadType):
         gcontext.verify_mode = ssl.CERT_NONE\n""")
             else:
                 base_code = base_code.replace("#CERTSKIP", "")
+                
+            base_code = self.clean_code(base_code)  # Clean up imports and code structure
             
             # Step 4: Apply obfuscation
             await self.update_build_step("Applying Obfuscation", "Implementing code obfuscation...")
@@ -436,7 +466,7 @@ class Igider(PayloadType):
                 await self.update_build_step("Applying Obfuscation", "Advanced obfuscation applied successfully")
             elif obfuscation_level == "basic":
                 base_code = basic_obfuscate(base_code)
-                await self.update_build_step("Applying Obfuscation", f"Selected OS: {selected_os}")
+                await self.update_build_step("Applying Obfuscation", "Basic obfuscation applied successfully")
             else:  # none
                 await self.update_build_step("Applying Obfuscation", "No obfuscation requested, skipping")
             
