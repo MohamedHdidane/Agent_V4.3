@@ -18,7 +18,6 @@ class PrivEscCommand(CommandBase):
     version = 1
     supported_ui_features = ["privesc:check"]
     is_download_file = False
-    author = "@ajpc500"
     parameters = []
     attackmapping = ["T1068", "T1548"]
     argument_class = PrivEscArguments

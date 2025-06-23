@@ -29,13 +29,7 @@ class DownloadArguments(TaskArguments):
             filename = self.command_line
         elif self.command_line[0] == "{":
             temp_json = json.loads(self.command_line)
-            # if "host" in temp_json:
-            #     # this means we have tasking from the file browser rather than the popup UI
-            #     # the medusa agent doesn't currently have the ability to do _remote_ listings, so we ignore it
-            # filename = temp_json["path"] + "/" + temp_json["file"]
             filename = temp_json["file"]
-            # else:
-            #     raise Exception("Unsupported JSON")
         else:
             filename = self.command_line
 
@@ -51,7 +45,6 @@ class DownloadCommand(CommandBase):
     version = 1
     supported_ui_features = ["file_browser:download"]
     is_download_file = True
-    author = "@ajpc500"
     parameters = []
     attackmapping = ["T1020", "T1030", "T1041"]
     argument_class = DownloadArguments

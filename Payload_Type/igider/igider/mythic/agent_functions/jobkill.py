@@ -4,14 +4,14 @@ from mythic_container.MythicRPC import *
 import sys
 
 
-class CatArguments(TaskArguments):
+class JobKillArguments(TaskArguments):
     def __init__(self, command_line, **kwargs):
         super().__init__(command_line, **kwargs)
         self.args = [
             CommandParameter(
-                name="path",
+                name="target_task_id",
                 type=ParameterType.String,
-                description="Read and output the content of a file",
+                description="Stop a long-running job",
             )
         ]
 
@@ -20,25 +20,25 @@ class CatArguments(TaskArguments):
             if self.command_line[0] == "{":
                 self.load_args_from_json_string(self.command_line)
             else:
-                self.add_arg("path", self.command_line)
+                self.add_arg("target_task_id", self.command_line)
         else:
             raise ValueError("Missing arguments")
 
-class CdCommand(CommandBase):
-    cmd = "cat"
+class JobKillCommand(CommandBase):
+    cmd = "jobkill"
     needs_admin = False
-    help_cmd = "cat /path/to/file"
-    description = "Read and output the contents of a file"
+    help_cmd = "jobkill {task_id}"
+    description = "Sends a stop signal to a long-running job"
     version = 1
-    attackmapping = [ "T1005" ]
-    argument_class = CatArguments
+    attackmapping = []
+    argument_class = JobKillArguments
     attributes = CommandAttributes(
         supported_python_versions=["Python 2.7", "Python 3.8"],
         supported_os=[SupportedOS.MacOS, SupportedOS.Windows, SupportedOS.Linux ],
     )
-    
+
     async def create_tasking(self, task: MythicTask) -> MythicTask:
-        task.display_params = task.args.get_arg("path")
+        task.display_params = "Sending stop signal for task with id: " + task.args.get_arg("target_task_id")
         return task
 
     async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
